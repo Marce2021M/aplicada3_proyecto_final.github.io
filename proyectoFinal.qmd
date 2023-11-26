@@ -1,0 +1,37 @@
+---
+title: "Estadística Aplicada 3 - Proyecto final"
+lang: es
+author: "Marcelino 191654"
+date: today
+
+format:
+  html:
+    page-layout: full
+    embed-resources: true
+    code-fold: true
+    number-sections: true
+    toc: true
+    toc-depth: 3
+    page-layout: full
+    embed-resources: true
+
+  pdf: 
+    toc: true
+    toc-depth: 3
+    page-layout: full
+    embed-resources: true
+---
+
+
+```{r, warning= FALSE, message= FALSE}
+#Cargamos paquetes
+library(tidymodels)
+library(discrim)
+library(corrr)
+library(paletteer)
+library(MASS)
+library(dslabs)
+library(tidyr)
+
+```
+
