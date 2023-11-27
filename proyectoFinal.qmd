@@ -1,24 +1,23 @@
 ---
 title: "Estadística Aplicada 3 - Proyecto final"
 lang: es
-author: "Marcelino 191654"
+author: 
+  - Marcelino 191654
+  - Daniela 
 date: today
-
 format:
   html:
+    html-math-method: webtex
     page-layout: full
     embed-resources: true
     code-fold: true
     number-sections: true
     toc: true
     toc-depth: 3
-
-  pdf: 
-    toc: true
-    toc-depth: 3
-    page-layout: full
-    embed-resources: true
 ---
+
+# Multidimensional scaling
+
 
 ```{r, warning= FALSE, message= FALSE}
 #Cargamos paquetes
