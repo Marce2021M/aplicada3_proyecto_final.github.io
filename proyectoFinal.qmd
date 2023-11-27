@@ -1,5 +1,6 @@
 ---
 title: "Estadística Aplicada 3 - Proyecto final"
+bibliography: references.bib
 lang: es
 author: 
   - Marcelino 191654
@@ -7,16 +8,17 @@ author:
 date: today
 format:
   html:
-    html-math-method: webtex
+    html-math-method: mathjax
     page-layout: full
     embed-resources: true
     code-fold: true
-    number-sections: true
     toc: true
     toc-depth: 3
+nocite: |
+  @*
 ---
 
-# Multidimensional scaling
+# Escalamiento multidimensional
 
 
 ```{r, warning= FALSE, message= FALSE}
@@ -30,3 +32,8 @@ library(dslabs)
 library(tidyr)
 ```
 
+
+# Referencias
+
+:::{#refs}
+:::
