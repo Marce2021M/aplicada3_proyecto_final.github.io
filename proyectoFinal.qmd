@@ -12,8 +12,6 @@ format:
     number-sections: true
     toc: true
     toc-depth: 3
-    page-layout: full
-    embed-resources: true
 
   pdf: 
     toc: true
@@ -22,7 +20,6 @@ format:
     embed-resources: true
 ---
 
-
 ```{r, warning= FALSE, message= FALSE}
 #Cargamos paquetes
 library(tidymodels)
@@ -30,8 +27,7 @@ library(discrim)
 library(corrr)
 library(paletteer)
 library(MASS)
-library(dslabs)
+library(dslabs)  
 library(tidyr)
-
 ```
 
