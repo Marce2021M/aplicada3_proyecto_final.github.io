@@ -3,8 +3,8 @@ title: "Estadística Aplicada 3 - Proyecto final"
 bibliography: references.bib
 lang: es
 author: 
-  - Marcelino 191654
-  - Daniela 
+  - Marcelino Sánchez Rodríguez 191654
+  - Daniela Morones Navarro 182770
 date: today
 format:
   html:
@@ -31,21 +31,41 @@ library(paletteer)
 library(MASS)
 library(dslabs)  
 library(tidyr)
+library(plotly)
 ```
 
-En Análisis de Componentes Principales (PCA), partimos de datos $x_i$ en un espacio $p$-dimensional y buscamos proyectarlos en un espacio de menor dimensión ($r < p$) representado por $y_1, \ldots, y_n$. Queremos que esta proyección minimice el error de reconstrucción o maximice la varianza.
+En Análisis de Componentes Principales (PCA), partimos de datos $x_i$ en un espacio $p$-dimensional y buscamos proyectarlos en un espacio de menor dimensión ($r < p$) representado por $y_1, \ldots, y_n$. Queremos que esta proyección minimice el error de reconstrucción o maximice la varianza. En pocas palabras se tiene un método de reducción de dimensionalidad que permite representar los datos en un espacio de menor dimensión, preservando la mayor cantidad de información posible.
 
-El Enfoque Multidimensional (MDS), por otro lado, comienza con una matriz de distancias $D$, que contiene las distancias o disimilitudes entre los puntos de datos. Si consideramos $n$ unidades experimentales, $D$ sería una matriz $n \times n$. Es importante mencionar que esta matriz es simétrica, lo que significa que $d_{ij} = d_{ji}$, y también tiene valores de cero en la diagonal ($d_{ii} = 0$).
+En el Escalamiento Multidimensional (MDS), por otro lado, se comienza con una matriz de distancias $D=(d_{ij}, i,j = 1,..,n)$, que contiene las distancias o disimilitudes entre los puntos de datos. El objetivo es encontrar un conjunto de puntos en un espacio de dimensión reducida ($\mathbb{R}^r$ por lo general $r = 2,3$ para poder visualizar), donde las distancias entre estos puntos sean lo más cercanas o representativas posible a las $d_{ij}$ en la matriz $D$. Es decir, estamos haciendo el proceso inverso de calcular la matriz de distancias de los datos para cierto espacio, pensando que los datos podrían representarse en el espacio que queramos. 
 
-El objetivo es encontrar un conjunto de puntos en un espacio de dimensión reducida ($\mathbb{R}^r$), donde las distancias entre estos puntos sean lo más cercanas posible a las $d_{ij}$ en la matriz $D$.
+Es importante mencionar que esta matriz es simétrica, lo que significa que $d_{ij} = d_{ji}$, y también tiene valores de cero en la diagonal ($d_{ii} = 0$). 
 
-En resumen, MDS busca representar estos datos en un espacio de menor dimensión de manera que las distancias entre los puntos reflejen fielmente las distancias originales entre los datos. A través de esta representación espacial, podemos comprender la estructura y relaciones subyacentes en los datos basados en las distancias entre ellos. El objetivo principal es encontrar $y_1, \ldots, y_k \in \mathbb{R}^r$ que minimicen la discrepancia entre las distancias originales y las distancias entre los puntos proyectados. Esto se puede expresar como el problema de optimización: 
+Este enfoque es muy útil cuando queremos analizar datos de los cuales no conocemos la estructura subyacente de los mismos (o por lo menos sería muy complicado cuantificar todas las características de los datos) y queremos tratar de visualizar sus semejanzas o diferencias (dado que es más fácil cuantificarlas), un ejemplo podría ser visualizar la diferencia de sabor entre distintos vinos y con este enfoque poder ofrecer vinos parecidos en sabor a las personas de acuerdo con el análisis visual de los datos. 
+
+Con lo cual, este método no solo reduce la dimensionalidad de los datos (pudiendo ser muy compleja) para poder visualizarlos, sino que también es útil para poder encontrar ciertos clusters, estructuras o patrones que serán muy útiles para el análisis estadístico de los mismos. 
+
+En resumen, MDS busca representar estos datos en un espacio de menor dimensión de manera que las distancias entre los puntos reflejen fielmente las distancias originales entre los datos. A través de esta representación espacial, podemos comprender la estructura y relaciones subyacentes en los datos basados en las distancias entre ellos. El objetivo principal matemático es encontrar $y_1, \ldots, y_k \in \mathbb{R}^r$ que minimicen la discrepancia entre las distancias originales y las distancias entre los puntos proyectados. Esto se puede expresar como el problema de optimización: 
 
 $$\sum_{i=1}^n \sum_{j=1}^n (d_{ij} - d(y_i, y_j))^2$$
 
 donde $d(y_i, y_j)$ es la distancia entre los puntos $y_i$ y $y_j$ en el espacio de dimensión $r$.
 
 Como resultado podemos obtener una representación visual que nos facilitaría la interpretación de las relaciones entre los datos y permite una clasificación más intuitiva basada en la proximidad visual.
+
+## Consideraciones técnicas
+
+Para poder realizar el MDS es necesario tener en cuenta ciertas consideraciones técnicas. La primera de ellas es definir qué consideramos distancias, dado que será importante para preservar la estructura de los datos:
+
+\textbf{Definición} La matriz $n \times n$, $D = (d_{ij})_{n \times n}$, es una matriz de distancias (a veces llamada matriz de disimilitudes) si y solo si
+
+ i) $d_{ij} \geq 0$ para todos $i, j = 1, \dots, n$.
+ii) $d_{ii} = 0$ para $i = 1, \dots, n$ y
+iii) $D = D^\top$, es decir, $D$ es simétrica ($d_{ij} = d_{ji}$).
+
+Notamos que no necesariamente es una métrica, dado que no necesariamente se cumple la desigualdad triangular. En este caso, no será necesaria la propiedad para este método.
+
+Además, es importante mencionar que la distancia que se quiera utilizar dependerá del contexto del problema; dado que podría que ser que nos dieran solo la matriz de distancias o que tuviéramos que calcularla.
+
 
 ## Ejemplo
 
@@ -55,22 +75,24 @@ Echemos un vistazo solo a los dígitos 7.
 
 ```{r}
 mnist <- readRDS("mnist.rds")
-mnist7 = mnist$train$x[mnist$train$y==7,,] # select just the 7s
+mnist7 = mnist$train$x[mnist$train$y == 7,,] # select just the 7s
 
 # Asumiendo que cada imagen es de 28x28 píxeles
 plot_digit <- function(image_vector) {
   image_matrix <- matrix(image_vector, nrow = 28, ncol = 28, byrow = TRUE)
   image_matrix <- t(image_matrix)[28:1,]
-  image(1:28, 1:28, t(image_matrix), col = gray.colors(256), xaxt = 'n', yaxt = 'n')
+  graphics::image(1:28, 1:28, t(image_matrix), col = gray.colors(256), 
+                  xaxs = 'i', yaxs = 'i', xlab = '', ylab = '', axes = FALSE)
 }
 
 # Configurar el área de trazado para múltiples gráficos
-par(mfrow=c(3,4)) # 3 filas, 4 columnas para las primeras 12 imágenes
+par(mfrow = c(3, 4), mar = c(0, 0, 0, 0)) # 3 filas, 4 columnas para las primeras 12 imágenes, sin márgenes
 
 # Plot the first 12 '7' digits
 for (i in 1:12) {
   plot_digit(mnist7[i,,])
 }
+
 ```
 
 Observamos que hay bastante variación entre ellos. Ahora veamos $\bar{x}$, el promedio de los 7.
@@ -80,28 +102,58 @@ xbar <- colMeans(mnist7)
 plot_digit(xbar)
 ```
 
-
-
-Con el conjunto de datos MNIST, aplicaremos el método de Escalamiento Multidimensional (MDS) para facilitar la clasificación y la interpretación visual de los datos. El MDS es una técnica estadística que permite representar datos de alta dimensión en un espacio de menor dimensionalidad, preservando la estructura de distancias entre los puntos en la medida de lo posible. Este enfoque es particularmente útil para explorar la estructura inherente de los datos cuando no hay una metodología de clasificación evidente, o cuando se desea obtener una comprensión intuitiva de las relaciones entre los datos en un espacio bidimensional ( $\mathbb{R}^{2}$) o tridimensional ($\mathbb{R}^{3}$).
+Con el conjunto de datos MNIST, aplicaremos el método de Escalamiento Multidimensional (MDS) para facilitar la clasificación y la interpretación visual de las diferencias y semejanzas entre los números.
 
 En este análisis, aunque ya poseemos conocimientos previos sobre las categorías de los dígitos en el conjunto de datos MNIST, utilizaremos MDS para visualizar y confirmar si los dígitos que comparten características similares en su forma se agrupan en proximidad en un espacio de dimensión reducida. Este procedimiento no solo reafirma las clasificaciones conocidas, sino que también puede revelar patrones subyacentes y agrupaciones que no son inmediatamente evidentes en la representación de alta dimensión original.
 
+Con lo cual procederemos a realizar el MDS sobre el conjunto de datos MNIST.
 
-```{r mnist, cache=TRUE, warning= FALSE, message= FALSE}
+### Procedimiento
 
+Antes de realizar el MDS, es necesario aclarar que existen varios métodos de MDS que cumplen con el objetivo principal mencionado anteriormente; sin embargo, en este caso utilizaremos el método de MDS clásico, que es el más común y el más fácil de entender. Este método está basado en distancias euclidianas, es decir, se considera que la matriz $D$; sin embargo, este mismo método se puede aplicar con otras distancias, teniendo en cuenta ciertas cosas que mencionaremos más adelante. El método se puede resumir en los siguientes pasos:
+
+1. Se **obtiene la matriz de distancias $D=(d_{ij})$** entre los datos. En este caso, no se tiene la matriz de distancias, por lo cual se debe calcular. Para esto, debemos tener en cuenta que la base de datos contiene imágenes de $28 \times 28$ píxeles, por lo cual cada dato es una matriz de $28 \times 28$ píxeles. Para poder calcular la matriz de distancias, convertiremos cada dato en un vector de $28 \times 28 = 784$ elementos, donde cada elemento es un píxel; para después calcular la distancia euclidiana entre cada vector. Se pueden utilizar otras metodologías como distancia entre matrices (viendo a los datos como matrices) u otro tipo de distancias más complejas; sin embargo, para efectos prácticos de este ejemplo nos bastará esta metodología. Notemos además que como queremos representar visualmente los datos, solo utilizaremos los primeros 1000 datos del conjunto de datos MNIST. 
+
+```{r}
 # Tomando solo una muestra de los datos para el ejemplo
-mnist_sample <- mnist$train$x[1:1500,,]
-mnist_labels_sample <-  mnist$train$y[1:1500]
+mnist_sample <- mnist$train$x[1:1000,,]
+mnist_labels_sample <-  mnist$train$y[1:1000]
 
 # Convertir los datos de las imágenes a un formato adecuado para el cálculo de distancias
+
 flat_images <- apply(mnist_sample, 1, as.vector)
+
+# Nota: La variable flat_images es una matriz de 784 x 1000, donde cada columna es un vector de 784 elementos que representa una imagen de 28 x 28 píxeles.
 
 # Calcular la matriz de distancias usando la distancia euclidiana
 dist_matrix <- dist(t(flat_images))
 
-# Realizar MDS
-mds_result <- cmdscale(dist_matrix, k = 2, eig=TRUE, add=TRUE)  # k es el número de dimensiones deseadas, aquí 2 para visualización
+# Nota: la función dist() calcula la distancia euclidiana por defecto y la calcula entre los renglones de la matriz, por lo cual se debe transponer la matriz de datos para que calcule la distancia entre los datos y no entre los píxeles de cada imagen.
 
+```
+
+
+2. **Matriz de distancias al cuadrado:** Gracias a $D$ se forma una matriz $A = (a_{ij})$ donde $a_{ij} = -d_{ij}^2$.
+
+3. **Matriz doblemente centrada:** A partir de la matriz $A$, se crea una matriz simétrica $B$ mediante $B = HAH$, donde $H=\mathbf{I}_{n}-n^{-1}\mathbf{1}_{n}\mathbf{1}_{n}^{T}$.
+
+4. **Valores y vectores propios de $B$:** Calcula los valores y vectores propios de la matriz $B$. Los valores propios positivos representan la varianza de los datos en un espacio de dimensiones reducidas. De hecho, tiene la misma interpretación que PCA porque este método está basado en un teorema que relaciona íntimamente MDS con PCA, dado el cálculo que hicimos. Para más información sobre el teorema se puede checar @wilkinson2023non. 
+
+5. **Selección de dimensiones deseadas:** De los valores propios positivos, elige los $r$ valores propios más grandes y sus correspondientes vectores propios, donde $r$ es la dimensión deseada desde la que se quiere visualizar. Para nuestro ejemplo, utilizaremos $r = 2$ para poder visualizar los datos en un espacio de dos dimensiones.
+
+6. **Coordenadas principales:** Utiliza estos vectores propios elegidos para formar un conjunto de puntos en un espacio de menor dimensión ($r$). Las distancias entre estos puntos representan las distancias aproximadas entre los puntos originales en $D$. Los nuevos puntos serán los formados  por $(y_1,\ldots,y_n)^{T} = (\sqrt{\lambda_{1}}v_{1}, \ldots, \sqrt{\lambda_{r}}v_{r})$, donde $v_{i}$ es el $i$-ésimo vector propio elegido junto con su eigenvalor $\lambda_{i}$ asociado. Mientras los eigenvalores que no fueron considerados en valor absoluto sean pequeños con respecto a los elegidos en valor absoluto, la representación será buena. Cabe destacar que hasta aquí todos estos pasos técnicos se pueden realizar con el siguiente código en R:
+
+```{r}
+# Realizar MDS
+mds_result <- cmdscale(dist_matrix, k = 2, eig=TRUE)  # k es el número de dimensiones deseadas, aquí 2 para visualización
+
+```
+
+Y el resultado visual es el siguiente:
+
+```{r mnist, cache=TRUE, warning= FALSE, message= FALSE}
+#| label: fig-mnist
+#| fig-cap: "MDS en MNIST visualizado en dos dimensiones"
 # Crear un vector de colores único para cada dígito
 unique_labels <- unique(mnist_labels_sample)
 colors <- rainbow(length(unique_labels))
@@ -115,11 +167,40 @@ text(mds_result$points, labels = mnist_labels_sample, col = label_colors, cex=0.
 
 ```
 
-Una vez realizado el MDS observamos en la Figura 1 (REFERENCIAR) un gráfico de dispersión que representa los resultados de aplicar el Escalamiento Multidimensional (MDS) al conjunto de datos MNIST. Cada punto en el gráfico corresponde a un dígito del conjunto de datos, proyectado en un espacio de dos dimensiones. Los puntos están etiquetados con los números correspondientes del 0 al 9, lo que indica la categoría de dígito que representan.
+### Observaciones
+
+Una vez realizado el MDS observamos en la @fig-mnist un gráfico de dispersión que representa los resultados de aplicar el Escalamiento Multidimensional (MDS) al conjunto de datos MNIST. Cada punto en el gráfico corresponde a un dígito del conjunto de datos, proyectado en un espacio de dos dimensiones. Los puntos están etiquetados con los números correspondientes del 0 al 9, lo que indica la categoría de dígito que representan.
 
 Los colores se utilizan para diferenciar cada uno de los dígitos, con cada número asignado a un color específico. Esto ayuda a visualizar cómo los diferentes dígitos se agrupan o dispersan en el espacio bidimensional. Por ejemplo, los dígitos que comparten características visuales similares pueden estar más cercanos entre sí, lo que sugiere una proximidad en el espacio de características de alta dimensión original.
 
-A primera vista, parece que algunos dígitos, como los '0', '1' y '7', forman agrupaciones distintas, indicando que los números dentro de estas categorías comparten similitudes que los separan de otros dígitos. Otros números, como los '3', '5', y '8', parecen estar más mezclados entre sí, lo que podría indicar una mayor similitud en su estructura visual o una superposición en el espacio de características que MDS intenta preservar.
+A primera vista, parece que algunos dígitos, como los '0', '1' y '7', forman agrupaciones distintas, indicando que los números dentro de estas categorías comparten similitudes que los separan de otros dígitos. Lo cual tiene bastante sentido, y hasta hay ciertos '7's y '1's que se parecen y estpan cerca en el espacio porque como vimos en las imágenes del '7', algunas personas lo escriben como un '1'.
+
+ Otros números, como los '3', '5', y '8', parecen estar más mezclados entre sí, lo que podría indicar una mayor similitud en su estructura visual o una superposición en el espacio de características que MDS intenta preservar. En esta caso, cuando escribimos esos números realmente no hay forma de que se parezcan pero sí comparten muchas características en sus formas de dibujo que hace que en nuestra @fig-mnist se vean cerca.
+
+ También, vemos como los '4' y '9' están muy cercanos, lo cual tiene sentido porque en la forma de escribirlos se parecen bastante, aunque para nosotros el '4' se puede escribir de muchas formas que se distinga.
+
+ Así mismo, vemos otras relaciones como el '6' con el '5' y '0', las cuales son igual de curiosas y lógicas por lo mencionado anteriormente; sin embargo, por la superposición de muchos dígitos en el centro es posible pensar que se podría mejorar la visualización añadiendo una dimensión más, como en la siguiente gráfica que no comentaremos para no hacerla tan extensa.
+
+ ```{r mnist3D, warning= FALSE, message= FALSE}
+# Realizar MDS
+mds_result <- cmdscale(dist_matrix, k = 3, eig=TRUE)  # k es el número de dimensiones deseadas
+points <- as.data.frame(mds_result$points)
+# Preparar el área de gráficos
+
+# Asumiendo que mds_result$points es una matriz o data frame con tres columnas (para las tres dimensiones)
+
+plot_ly(data = points, x = ~V1, y = ~V2, z = ~V3, type = 'scatter3d', mode = 'text', 
+        text = ~mnist_labels_sample, 
+        textfont = list(size = 15, color = label_colors),
+        hoverinfo = 'text') %>%
+  layout(title = "MDS en MNIST", 
+         scene = list(xaxis = list(title = "Dimensión 1"),
+                      yaxis = list(title = "Dimensión 2"),
+                      zaxis = list(title = "Dimensión 3")))
+
+
+ ```
+
 
 La utilidad de esta visualización radica en su capacidad para revelar la estructura relativa y las similitudes entre los dígitos escritos a mano en una forma que puede ser más fácilmente interpretada que en su forma de alta dimensión original. Esto puede ser especialmente valioso para tareas de clasificación y reconocimiento de patrones, ya que proporciona una visión intuitiva de los datos.
 
@@ -133,8 +214,3 @@ La aplicación de MDS en el conjunto de datos MNIST ha permitido una visualizaci
 :::{#refs}
 :::
 
-Con lo cual explicaremos el procedimiento para realizar el MDS.
-
-### Procedimiento
-
-1. Se calcula la matriz de distancias $D$ entre los datos. En este caso, la matriz de distancias es una matriz de $n \times n$ donde $n$ es el número de datos. Aunque igual si ya nos dieran una matriz de distancias ya no tendríamos que hacer este paso. Además, realizaremos una transformación de los datos por facilidad
